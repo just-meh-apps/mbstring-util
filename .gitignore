@@ -1,0 +1,7 @@
+# Ignore build output and IDE specific files
+target/
+
+# Ignore .idx directory...
+.idx/
+# ...but do NOT ignore .idx/dev.nix
+!.idx/dev.nix
