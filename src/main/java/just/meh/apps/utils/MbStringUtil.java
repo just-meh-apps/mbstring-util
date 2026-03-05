@@ -228,22 +228,22 @@ public final class MbStringUtil {
 
         int codePointCount = str.codePointCount(0, str.length());
 
-        // Calculate effective start index
+        // 유효 시작 인덱스 계산
         int actualStart = (start >= 0) ? start : codePointCount + start;
 
-        // Per requirement, if start is out of bounds, return empty string.
+        // 시작 인덱스가 범위를 벗어나면 빈 문자열을 반환합니다.
         if (actualStart < 0 || actualStart >= codePointCount) {
             return EMPTY_STRING;
         }
 
-        // Calculate effective end index
+        // 유효 끝 인덱스 계산
         int actualEnd = (end >= 0) ? end : codePointCount + end;
         
-        // Per requirement, if end is out of bounds, clamp it to the valid range [0, codePointCount].
+        // 끝 인덱스가 범위를 벗어나면 유효한 범위 [0, codePointCount]로 조정합니다.
         actualEnd = Math.max(0, actualEnd);
         actualEnd = Math.min(codePointCount, actualEnd);
 
-        // Per requirement, if start >= end, return empty string.
+        // start >= end 이면 빈 문자열을 반환합니다.
         if (actualStart >= actualEnd) {
             return EMPTY_STRING;
         }
@@ -311,25 +311,25 @@ public final class MbStringUtil {
             return EMPTY_STRING;
         }
 
-        // We need the total byte length to handle negative indices correctly.
+        // 음수 인덱스를 올바르게 처리하려면 전체 바이트 길이가 필요합니다.
         int totalBytes = lengthByBytes(str, charset);
 
-        // Calculate effective start index
+        // 유효 시작 인덱스 계산
         int actualStart = (start >= 0) ? start : totalBytes + start;
 
-        // Per requirement, if start is out of bounds, return empty string.
+        // 시작 인덱스가 범위를 벗어나면 빈 문자열을 반환합니다.
         if (actualStart < 0 || actualStart >= totalBytes) {
             return EMPTY_STRING;
         }
         
-        // Calculate effective end index
+        // 유효 끝 인덱스 계산
         int actualEnd = (end >= 0) ? end : totalBytes + end;
 
-        // Per requirement, if end is out of bounds, clamp it to the valid range [0, totalBytes].
+        // 끝 인덱스가 범위를 벗어나면 유효한 범위 [0, totalBytes]로 조정합니다.
         actualEnd = Math.max(0, actualEnd);
         actualEnd = Math.min(totalBytes, actualEnd);
 
-        // Per requirement, if start >= end, return empty string.
+        // start >= end 이면 빈 문자열을 반환합니다.
         if (actualStart >= actualEnd) {
             return EMPTY_STRING;
         }
