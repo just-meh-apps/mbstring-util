@@ -35,6 +35,11 @@ class MbStringUtilTest {
         // len is zero or negative
         assertEquals("", MbStringUtil.substr("가나다abc", 2, 0));
         assertEquals("", MbStringUtil.substr("가나다abc", 2, -2));
+
+        // Emoji examples
+        assertEquals("👍a", MbStringUtil.substr("👍a가나", 0, 2));
+        assertEquals("a가", MbStringUtil.substr("👍a가나", 1, 2));
+        assertEquals("가", MbStringUtil.substr("👍a가나", -2, 1));
     }
 
     @Test
@@ -67,5 +72,20 @@ class MbStringUtilTest {
         assertEquals("가", MbStringUtil.substrByBytes("가나다abc", 0, 3, StandardCharsets.UTF_8));
         assertEquals(" 나", MbStringUtil.substrByBytes("가나다abc", 2, 4, StandardCharsets.UTF_8)); // Corrected params
         assertEquals(" 나 ", MbStringUtil.substrByBytes("가나다abc", 2, 5, StandardCharsets.UTF_8)); // Corrected params
+        
+        // UTF-8 Emoji Examples ("👍a가" is 8 bytes: 4 + 1 + 3)
+        assertEquals("   ", MbStringUtil.substrByBytes("👍a가", 0, 3, StandardCharsets.UTF_8));
+        assertEquals("👍", MbStringUtil.substrByBytes("👍a가", 0, 4, StandardCharsets.UTF_8));
+        assertEquals("👍a", MbStringUtil.substrByBytes("👍a가", 0, 5, StandardCharsets.UTF_8));
+        assertEquals(" a ", MbStringUtil.substrByBytes("👍a가", 3, 3, StandardCharsets.UTF_8));
+        assertEquals("a가", MbStringUtil.substrByBytes("👍a가", 4, 4, StandardCharsets.UTF_8));
+
+        // Unencodable character example with EUC-KR
+        // "a" is 1 byte, "👍" is unencodable (becomes 1 space), "가" is 2 bytes.
+        // Total pseudo-bytes = 1 + 1 + 2 = 4
+        assertEquals("a 가", MbStringUtil.substrByBytes("a👍가", 0, 4, EUCKR));
+        assertEquals("a  ", MbStringUtil.substrByBytes("a👍가", 0, 3, EUCKR));
+        assertEquals(" 가", MbStringUtil.substrByBytes("a👍가", 1, 3, EUCKR));
+        assertEquals(" ", MbStringUtil.substrByBytes("a👍가", 1, 1, EUCKR));
     }
 }

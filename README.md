@@ -39,7 +39,7 @@ MbStringUtil.substr("가나다abc", -2, 2) // returns "bc"
 
 ### `substrByBytes`
 
-Extracts a substring based on byte length. It safely replaces parts of truncated multi-byte characters with spaces.
+Extracts a substring based on byte length. It safely replaces parts of truncated multi-byte characters with spaces. Additionally, characters that cannot be encoded in the specified charset (e.g., an emoji in EUC-KR) are also replaced with a single space.
 
 ```java
 Charset euckr = Charset.forName("EUC-KR");
@@ -49,6 +49,9 @@ MbStringUtil.substrByBytes("가나다abc", 0, 2, euckr) // returns "가"
 MbStringUtil.substrByBytes("가나다abc", 1, 2, euckr) // returns "  "
 MbStringUtil.substrByBytes("가나다abc", 4, 3, euckr) // returns "다a"
 MbStringUtil.substrByBytes("가나다abc", 5, 2, euckr) // returns " a"
+
+// Unencodable character example
+MbStringUtil.substrByBytes("a👍가", 0, 4, euckr)      // returns "a 가"
 
 // UTF-8 Examples
 MbStringUtil.substrByBytes("가나다abc", 0, 3, StandardCharsets.UTF_8) // returns "가"

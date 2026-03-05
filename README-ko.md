@@ -39,7 +39,7 @@ MbStringUtil.substr("가나다abc", -2, 2) // 반환값: "bc"
 
 ### `substrByBytes`
 
-바이트 길이를 기준으로 서브스트링을 추출합니다. 다중 바이트 문자가 잘릴 경우 안전하게 공백으로 치환합니다.
+바이트 길이를 기준으로 서브스트링을 추출합니다. 다중 바이트 문자가 잘릴 경우 안전하게 공백으로 치환합니다. 또한, 명시된 문자셋으로 인코딩할 수 없는 문자(예: EUC-KR 인코딩에서의 이모지) 역시 하나의 공백으로 치환됩니다.
 
 ```java
 Charset euckr = Charset.forName("EUC-KR");
@@ -49,6 +49,9 @@ MbStringUtil.substrByBytes("가나다abc", 0, 2, euckr) // 반환값: "가"
 MbStringUtil.substrByBytes("가나다abc", 1, 2, euckr) // 반환값: "  "
 MbStringUtil.substrByBytes("가나다abc", 4, 3, euckr) // 반환값: "다a"
 MbStringUtil.substrByBytes("가나다abc", 5, 2, euckr) // 반환값: " a"
+
+// 인코딩 불가능한 문자 예시
+MbStringUtil.substrByBytes("a👍가", 0, 4, euckr)      // 반환값: "a 가"
 
 // UTF-8 예시
 MbStringUtil.substrByBytes("가나다abc", 0, 3, StandardCharsets.UTF_8) // 반환값: "가"
