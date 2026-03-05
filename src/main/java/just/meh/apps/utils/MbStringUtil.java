@@ -15,10 +15,11 @@ import java.util.List;
  */
 public final class MbStringUtil {
 
-    private static final String EMPTY_STRING = "";
-    private static final char PADDING_CHAR = ' ';
-    private static final int UNENCODABLE_CHAR_LENGTH = -1;
-    private static final int PLACEHOLDER_BYTE_LENGTH = 1;
+    // 자주 사용되는 상수를 정의하여 코드의 가독성과 유지보수성을 높입니다.
+    private static final String EMPTY_STRING = ""; // 빈 문자열
+    private static final char PADDING_CHAR = ' '; // 패딩에 사용될 문자
+    private static final int UNENCODABLE_CHAR_LENGTH = -1; // 인코딩 불가능한 문자의 길이를 나타내는 값
+    private static final int PLACEHOLDER_BYTE_LENGTH = 1; // 인코딩 불가능한 문자를 대체하는 플레이스홀더의 바이트 길이
 
     /**
      * Private constructor to prevent instantiation of this utility class.
@@ -69,25 +70,33 @@ public final class MbStringUtil {
      * @return The resulting substring. (결과 하위 문자열)
      */
     public static String substr(String str, int start, int len) {
+        // 입력 문자열이 null이거나 비어있거나, 길이가 0 이하이면 빈 문자열을 반환합니다.
         if (str == null || str.isEmpty() || len <= 0) {
             return EMPTY_STRING;
         }
 
+        // 문자열의 전체 코드 포인트 수를 계산합니다.
         int codePointCount = str.codePointCount(0, str.length());
+        // 실제 시작 위치를 계산합니다. (음수 인덱스 처리 포함)
         int effectiveStart = calculateEffectiveStart(codePointCount, start);
 
+        // 시작 위치가 유효 범위를 벗어나면 빈 문자열을 반환합니다.
         if (effectiveStart < 0 || effectiveStart >= codePointCount) {
             return EMPTY_STRING;
         }
 
+        // 실제 추출할 길이를 계산합니다. (문자열 끝을 넘지 않도록 조정)
         int effectiveLen = Math.min(len, codePointCount - effectiveStart);
+        // 길이가 0 이하면 빈 문자열을 반환합니다.
         if (effectiveLen <= 0) {
             return EMPTY_STRING;
         }
 
+        // 코드 포인트 인덱스를 실제 char 인덱스로 변환합니다.
         int startCharIndex = str.offsetByCodePoints(0, effectiveStart);
         int endCharIndex = str.offsetByCodePoints(startCharIndex, effectiveLen);
 
+        // substring을 추출하여 반환합니다.
         return str.substring(startCharIndex, endCharIndex);
     }
 
@@ -147,22 +156,29 @@ public final class MbStringUtil {
      * @return The resulting substring, padded with spaces if necessary. (결과 하위 문자열, 필요한 경우 공백으로 채워집니다.)
      */
     public static String substrByBytes(String str, int start, int len, Charset charset) {
+        // 입력 문자열이 null이거나 비어있거나, 길이가 0 이하이면 빈 문자열을 반환합니다.
         if (str == null || str.isEmpty() || len <= 0) {
             return EMPTY_STRING;
         }
 
+        // 문자열의 메타데이터(각 문자의 바이트 길이 등)를 분석합니다.
         StringMetadata metadata = analyzeString(str, charset);
+        // 실제 시작 바이트 위치를 계산합니다. (음수 인덱스 처리 포함)
         int effectiveStart = calculateEffectiveStart(metadata.totalBytes, start);
 
+        // 시작 위치가 유효 범위를 벗어나면 빈 문자열을 반환합니다.
         if (effectiveStart < 0 || effectiveStart >= metadata.totalBytes) {
             return EMPTY_STRING;
         }
 
+        // 실제 추출할 끝 바이트 위치를 계산합니다.
         int effectiveEnd = Math.min(effectiveStart + len, metadata.totalBytes);
+        // 끝 위치가 시작 위치보다 작거나 같으면 빈 문자열을 반환합니다.
         if (effectiveEnd <= effectiveStart) {
             return EMPTY_STRING;
         }
 
+        // 메타데이터를 사용하여 하위 문자열을 구성합니다.
         return buildSubstring(str, metadata, effectiveStart, effectiveEnd);
     }
 
@@ -193,9 +209,11 @@ public final class MbStringUtil {
      * @return The number of code points in the string, or 0 if the string is null or empty. (문자열의 코드 포인트 수, 문자열이 null이거나 비어 있으면 0)
      */
     public static int length(String str) {
+        // 문자열이 null이거나 비어있으면 0을 반환합니다.
         if (str == null || str.isEmpty()) {
             return 0;
         }
+        // 문자열의 코드 포인트 수를 반환합니다.
         return str.codePointCount(0, str.length());
     }
 
@@ -228,67 +246,86 @@ public final class MbStringUtil {
      * @return The length of the string in bytes, or 0 if the string is null or empty. (문자열의 바이트 단위 길이, 문자열이 null이거나 비어 있으면 0)
      */
     public static int lengthByBytes(String str, Charset charset) {
+        // 문자열이 null이거나 비어있으면 0을 반환합니다.
         if (str == null || str.isEmpty()) {
             return 0;
         }
+        // 지정된 문자 집합으로 문자열을 인코딩한 후 바이트 길이를 반환합니다.
         return str.getBytes(charset).length;
     }
 
+    // 문자열 분석 결과를 저장하는 내부 클래스입니다.
     private static class StringMetadata {
-        final List<Integer> codePointStartIndices = new ArrayList<>();
-        final List<Integer> codePointByteLengths = new ArrayList<>();
-        final HashMap<Integer, Integer> byteOffsetToCodePointIndexMap = new HashMap<>();
-        int totalBytes = 0;
+        final List<Integer> codePointStartIndices = new ArrayList<>(); // 각 코드 포인트의 시작 char 인덱스
+        final List<Integer> codePointByteLengths = new ArrayList<>(); // 각 코드 포인트의 바이트 길이
+        final HashMap<Integer, Integer> byteOffsetToCodePointIndexMap = new HashMap<>(); // 바이트 오프셋을 코드 포인트 인덱스로 매핑
+        int totalBytes = 0; // 전체 바이트 길이
     }
 
+    // 문자열을 분석하여 메타데이터를 생성하는 private 헬퍼 메소드입니다.
     private static StringMetadata analyzeString(String str, Charset charset) {
         StringMetadata metadata = new StringMetadata();
         CharsetEncoder encoder = charset.newEncoder();
 
+        // 문자열을 순회하며 각 코드 포인트를 처리합니다.
         for (int i = 0; i < str.length(); ) {
             int codePoint = str.codePointAt(i);
 
+            // 현재 바이트 오프셋을 현재 코드 포인트 인덱스에 매핑합니다.
             metadata.byteOffsetToCodePointIndexMap.put(metadata.totalBytes, metadata.codePointStartIndices.size());
+            // 현재 코드 포인트의 시작 char 인덱스를 저장합니다.
             metadata.codePointStartIndices.add(i);
 
             try {
+                // 코드 포인트를 문자열로 변환하고 인코딩하여 바이트 길이를 계산합니다.
                 String codePointStr = new String(Character.toChars(codePoint));
                 ByteBuffer bb = encoder.encode(java.nio.CharBuffer.wrap(codePointStr));
                 int byteLength = bb.limit();
                 metadata.codePointByteLengths.add(byteLength);
                 metadata.totalBytes += byteLength;
             } catch (CharacterCodingException e) {
+                // 인코딩할 수 없는 문자인 경우, 특수 값으로 표시하고 플레이스홀더 길이를 더합니다.
                 metadata.codePointByteLengths.add(UNENCODABLE_CHAR_LENGTH);
                 metadata.totalBytes += PLACEHOLDER_BYTE_LENGTH;
             }
+            // 다음 코드 포인트로 이동합니다. (보충 문자의 경우 2 char 이동)
             i += Character.charCount(codePoint);
         }
         return metadata;
     }
 
+    // 분석된 메타데이터를 기반으로 하위 문자열을 구성하는 private 헬퍼 메소드입니다.
     private static String buildSubstring(String originalStr, StringMetadata metadata, int startByte, int endByte) {
         StringBuilder result = new StringBuilder();
+        // 지정된 바이트 범위 내에서 순회합니다.
         for (int currentByte = startByte; currentByte < endByte; ) {
+            // 현재 바이트 오프셋에 해당하는 코드 포인트 인덱스를 찾습니다.
             Integer codePointIndex = metadata.byteOffsetToCodePointIndexMap.get(currentByte);
 
             if (codePointIndex != null) {
+                // 해당 코드 포인트의 바이트 길이를 가져옵니다.
                 int charByteLength = metadata.codePointByteLengths.get(codePointIndex);
 
                 if (charByteLength == UNENCODABLE_CHAR_LENGTH) {
+                    // 인코딩 불가능한 문자인 경우, 패딩 문자를 추가하고 플레이스홀더 길이만큼 이동합니다.
                     result.append(PADDING_CHAR);
                     currentByte += PLACEHOLDER_BYTE_LENGTH;
                 } else {
+                    // 잘리지 않고 문자가 완전히 포함될 수 있는지 확인합니다.
                     if (currentByte + charByteLength <= endByte) {
+                        // 문자를 결과에 추가하고 해당 바이트 길이만큼 이동합니다.
                         int charStartIndex = metadata.codePointStartIndices.get(codePointIndex);
                         int codePoint = originalStr.codePointAt(charStartIndex);
                         result.append(Character.toChars(codePoint));
                         currentByte += charByteLength;
                     } else {
+                        // 문자가 잘리는 경우, 패딩 문자를 추가하고 1바이트만 이동합니다.
                         result.append(PADDING_CHAR);
                         currentByte++;
                     }
                 }
             } else {
+                // 현재 바이트 위치에 해당하는 문자가 없는 경우 (멀티바이트 문자의 중간 바이트), 패딩 문자를 추가하고 1바이트 이동합니다.
                 result.append(PADDING_CHAR);
                 currentByte++;
             }
@@ -296,7 +333,9 @@ public final class MbStringUtil {
         return result.toString();
     }
     
+    // 시작 위치를 계산하는 private 헬퍼 메소드입니다. (음수 인덱스 처리)
     private static int calculateEffectiveStart(int totalLength, int start) {
+        // 시작 위치가 0 이상이면 그대로 반환하고, 음수이면 전체 길이에서 더하여 끝에서의 오프셋으로 계산합니다.
         return start >= 0 ? start : totalLength + start;
     }
 }
