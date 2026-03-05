@@ -183,6 +183,162 @@ public final class MbStringUtil {
     }
 
     /**
+     * Extracts a substring from a string using start and end code point indices.
+     * This method is a wrapper around {@link #substr(String, int, int)}.
+     * <p>
+     * 시작 및 끝 코드 포인트 인덱스를 사용하여 문자열에서 하위 문자열을 추출합니다.
+     * 이 메소드는 {@link #substr(String, int, int)}를 감싸는 래퍼입니다.
+     * 
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.substring(null, 0, 1)      = ""
+     * MbStringUtil.substring("", 0, 1)        = ""
+     *
+     * // start is positive
+     * MbStringUtil.substring("가나다abc", 0, 2) = "가나"
+     * MbStringUtil.substring("가나다abc", 3, 5) = "ab"
+     *
+     * // start is negative
+     * MbStringUtil.substring("가나다abc", -5, -3) = "나다"
+     * MbStringUtil.substring("가나다abc", -2, 6) = "bc"
+     *
+     * // start is out of bounds
+     * MbStringUtil.substring("가나다abc", 100, 102) = ""
+     * MbStringUtil.substring("가나다abc", -100, -98) = ""
+     *
+     * // start >= end
+     * MbStringUtil.substring("가나다abc", 2, 2)  = ""
+     * MbStringUtil.substring("가나다abc", 2, 1) = ""
+     *
+     * // Emoji examples
+     * MbStringUtil.substring("👍a가나", 0, 2) = "👍a"
+     * MbStringUtil.substring("👍a가나", 1, 3) = "a가"
+     * MbStringUtil.substring("👍a가나", -2, -1) = "가"
+     * </pre>
+     *
+     * @param str The source string. (원본 문자열)
+     * @param start The beginning code point index, inclusive. Negative values are offsets from the end. (시작 코드 포인트 인덱스(포함). 음수 값은 끝에서의 오프셋입니다.)
+     * @param end The ending code point index, exclusive. Negative values are offsets from the end. (끝 코드 포인트 인덱스(제외). 음수 값은 끝에서의 오프셋입니다.)
+     * @return The specified substring. (지정된 하위 문자열)
+     */
+    public static String substring(String str, int start, int end) {
+        if (str == null || str.isEmpty()) {
+            return EMPTY_STRING;
+        }
+
+        int codePointCount = str.codePointCount(0, str.length());
+
+        // Calculate effective start index
+        int actualStart = (start >= 0) ? start : codePointCount + start;
+
+        // Per requirement, if start is out of bounds, return empty string.
+        if (actualStart < 0 || actualStart >= codePointCount) {
+            return EMPTY_STRING;
+        }
+
+        // Calculate effective end index
+        int actualEnd = (end >= 0) ? end : codePointCount + end;
+        
+        // Per requirement, if end is out of bounds, clamp it to the valid range [0, codePointCount].
+        actualEnd = Math.max(0, actualEnd);
+        actualEnd = Math.min(codePointCount, actualEnd);
+
+        // Per requirement, if start >= end, return empty string.
+        if (actualStart >= actualEnd) {
+            return EMPTY_STRING;
+        }
+
+        int len = actualEnd - actualStart;
+        return substr(str, actualStart, len);
+    }
+
+    /**
+     * Extracts a substring from a string using start and end byte indices.
+     * This method is a wrapper around {@link #substrByBytes(String, int, int, Charset)}.
+     * <p>
+     * 시작 및 끝 바이트 인덱스를 사용하여 문자열에서 하위 문자열을 추출합니다.
+     * 이 메소드는 {@link #substrByBytes(String, int, int, Charset)}를 감싸는 래퍼입니다.
+     *
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.substringByBytes(null, 0, 1, StandardCharsets.UTF_8)      = ""
+     * MbStringUtil.substringByBytes("", 0, 1, StandardCharsets.UTF_8)        = ""
+     *
+     * // start >= end
+     * MbStringUtil.substringByBytes("가나다abc", 2, 2, StandardCharsets.UTF_8)  = ""
+     * MbStringUtil.substringByBytes("가나다abc", 2, 1, StandardCharsets.UTF_8) = ""
+     *
+     * // start is out of bounds
+     * MbStringUtil.substringByBytes("가나다abc", 100, 102, StandardCharsets.UTF_8) = ""
+     * MbStringUtil.substringByBytes("가나다abc", -100, -98, StandardCharsets.UTF_8) = ""
+     *
+     * // EUC-KR Examples
+     * Charset euckr = Charset.forName("EUC-KR");
+     * MbStringUtil.substringByBytes("가나다abc", 0, 2, euckr) = "가"
+     * MbStringUtil.substringByBytes("가나다abc", 1, 3, euckr) = "  "
+     * MbStringUtil.substringByBytes("가나다abc", 4, 7, euckr) = "다a"
+     * MbStringUtil.substringByBytes("가나다abc", 5, 7, euckr) = " a"
+     * MbStringUtil.substringByBytes("가나다abc", 0, 3, euckr) = "가 "
+     * MbStringUtil.substringByBytes("가나다abc", 1, 4, euckr) = " 나"
+     *
+     * // UTF-8 Examples
+     * MbStringUtil.substringByBytes("가나다abc", 0, 2, StandardCharsets.UTF_8) = "  "
+     * MbStringUtil.substringByBytes("가나다abc", 1, 3, StandardCharsets.UTF_8) = "  "
+     * MbStringUtil.substringByBytes("가나다abc", 4, 7, StandardCharsets.UTF_8) = "   "
+     * MbStringUtil.substringByBytes("가나다abc", 0, 3, StandardCharsets.UTF_8) = "가"
+     * MbStringUtil.substringByBytes("가나다abc", 2, 6, StandardCharsets.UTF_8) = " 나"
+     * MbStringUtil.substringByBytes("가나다abc", 2, 7, StandardCharsets.UTF_8) = " 나 "
+     *
+     * // UTF-8 Emoji Examples ("👍a가" is 8 bytes: 4 + 1 + 3)
+     * MbStringUtil.substringByBytes("👍a가", 0, 3, StandardCharsets.UTF_8) = "   "
+     * MbStringUtil.substringByBytes("👍a가", 0, 4, StandardCharsets.UTF_8) = "👍"
+     * MbStringUtil.substringByBytes("👍a가", 0, 5, StandardCharsets.UTF_8) = "👍a"
+     * MbStringUtil.substringByBytes("👍a가", 3, 6, StandardCharsets.UTF_8) = " a "
+     * MbStringUtil.substringByBytes("👍a가", 4, 8, StandardCharsets.UTF_8) = "a가"
+     *
+     * // Unencodable character example with EUC-KR
+     * MbStringUtil.substringByBytes("a👍가", 0, 5, euckr) = "a 가"
+     * </pre>
+     *
+     * @param str The source string. (원본 문자열)
+     * @param start The beginning byte index, inclusive. Negative values are offsets from the end. (시작 바이트 인덱스(포함). 음수 값은 끝에서의 오프셋입니다.)
+     * @param end The ending byte index, exclusive. Negative values are offsets from the end. (끝 바이트 인덱스(제외). 음수 값은 끝에서의 오프셋입니다.)
+     * @param charset The character set to use. (사용할 문자 집합)
+     * @return The specified substring. (지정된 하위 문자열)
+     */
+    public static String substringByBytes(String str, int start, int end, Charset charset) {
+        if (str == null || str.isEmpty()) {
+            return EMPTY_STRING;
+        }
+
+        // We need the total byte length to handle negative indices correctly.
+        int totalBytes = lengthByBytes(str, charset);
+
+        // Calculate effective start index
+        int actualStart = (start >= 0) ? start : totalBytes + start;
+
+        // Per requirement, if start is out of bounds, return empty string.
+        if (actualStart < 0 || actualStart >= totalBytes) {
+            return EMPTY_STRING;
+        }
+        
+        // Calculate effective end index
+        int actualEnd = (end >= 0) ? end : totalBytes + end;
+
+        // Per requirement, if end is out of bounds, clamp it to the valid range [0, totalBytes].
+        actualEnd = Math.max(0, actualEnd);
+        actualEnd = Math.min(totalBytes, actualEnd);
+
+        // Per requirement, if start >= end, return empty string.
+        if (actualStart >= actualEnd) {
+            return EMPTY_STRING;
+        }
+
+        int len = actualEnd - actualStart;
+        return substrByBytes(str, actualStart, len, charset);
+    }
+
+    /**
      * Returns the length of a string in code points, returning 0 for null or empty strings.
      * This method is safe for supplementary characters (e.g., emojis).
      * <p>
