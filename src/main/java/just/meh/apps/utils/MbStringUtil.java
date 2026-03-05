@@ -15,6 +15,8 @@ public final class MbStringUtil {
 
     private static final String EMPTY_STRING = "";
     private static final char PADDING_CHAR = ' ';
+    private static final int UNENCODABLE_CHAR_LENGTH = -1;
+    private static final int PLACEHOLDER_BYTE_LENGTH = 1;
 
     /**
      * Private constructor to prevent instantiation of this utility class.
@@ -65,13 +67,7 @@ public final class MbStringUtil {
         }
 
         int codePointCount = str.codePointCount(0, str.length());
-        int effectiveStart;
-
-        if (start >= 0) {
-            effectiveStart = start;
-        } else { // start < 0
-            effectiveStart = codePointCount + start;
-        }
+        int effectiveStart = calculateEffectiveStart(codePointCount, start);
 
         if (effectiveStart < 0 || effectiveStart >= codePointCount) {
             return EMPTY_STRING;
@@ -81,7 +77,7 @@ public final class MbStringUtil {
         if (effectiveLen <= 0) {
             return EMPTY_STRING;
         }
-        
+
         int startCharIndex = str.offsetByCodePoints(0, effectiveStart);
         int endCharIndex = str.offsetByCodePoints(startCharIndex, effectiveLen);
 
@@ -145,84 +141,143 @@ public final class MbStringUtil {
             return EMPTY_STRING;
         }
 
-        // 1. Create maps for code point boundaries
-        CharsetEncoder encoder = charset.newEncoder();
-        List<Integer> codePointStartIndices = new ArrayList<>(); // Stores the char index for the start of each code point
-        List<Integer> codePointByteLengths = new ArrayList<>();
-        HashMap<Integer, Integer> byteOffsetToCodePointIndexMap = new HashMap<>();
+        StringMetadata metadata = analyzeString(str, charset);
+        int effectiveStart = calculateEffectiveStart(metadata.totalBytes, start);
+
+        if (effectiveStart < 0 || effectiveStart >= metadata.totalBytes) {
+            return EMPTY_STRING;
+        }
+
+        int effectiveEnd = Math.min(effectiveStart + len, metadata.totalBytes);
+        if (effectiveEnd <= effectiveStart) {
+            return EMPTY_STRING;
+        }
+
+        return buildSubstring(str, metadata, effectiveStart, effectiveEnd);
+    }
+
+    /**
+     * Returns the length of a string in code points, returning 0 for null or empty strings.
+     * This method is safe for supplementary characters (e.g., emojis).
+     * <p>
+     * Note: This result may differ from {@code String.length()}, which counts 16-bit {@code char} units.
+     * For example, a supplementary character like an emoji ("👍") is counted as a single character by this method,
+     * but as two {@code char}s by {@code String.length()}.
+     *
+     * <pre>
+     * MbStringUtil.length(null)      = 0
+     * MbStringUtil.length("")        = 0
+     * MbStringUtil.length("abc")     = 3
+     * MbStringUtil.length("가나다")   = 3
+     * MbStringUtil.length("👍a가")   = 3 // contrast with "👍a가".length() which is 4
+     * </pre>
+     *
+     * @param str The string to check.
+     * @return The number of code points in the string, or 0 if the string is null or empty.
+     */
+    public static int length(String str) {
+        if (str == null || str.isEmpty()) {
+            return 0;
+        }
+        return str.codePointCount(0, str.length());
+    }
+
+    /**
+     * Returns the byte length of a string for a given charset, returning 0 for null or empty strings.
+     *
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.lengthByBytes(null, StandardCharsets.UTF_8)    = 0
+     * MbStringUtil.lengthByBytes("", StandardCharsets.UTF_8)      = 0
+     *
+     * // EUC-KR Examples
+     * Charset euckr = Charset.forName("EUC-KR");
+     * MbStringUtil.lengthByBytes("abc", euckr)   = 3
+     * MbStringUtil.lengthByBytes("가나다", euckr) = 6
+     *
+     * // UTF-8 Examples
+     * MbStringUtil.lengthByBytes("abc", StandardCharsets.UTF_8)   = 3
+     * MbStringUtil.lengthByBytes("가나다", StandardCharsets.UTF_8) = 9
+     * MbStringUtil.lengthByBytes("👍a가", StandardCharsets.UTF_8) = 8
+     *
+     * // Unencodable character example
+     * MbStringUtil.lengthByBytes("👍", euckr) = 1 // '?'
+     * </pre>
+     *
+     * @param str The string to measure.
+     * @param charset The character set to use for encoding.
+     * @return The length of the string in bytes, or 0 if the string is null or empty.
+     */
+    public static int lengthByBytes(String str, Charset charset) {
+        if (str == null || str.isEmpty()) {
+            return 0;
+        }
+        return str.getBytes(charset).length;
+    }
+
+    private static class StringMetadata {
+        final List<Integer> codePointStartIndices = new ArrayList<>();
+        final List<Integer> codePointByteLengths = new ArrayList<>();
+        final HashMap<Integer, Integer> byteOffsetToCodePointIndexMap = new HashMap<>();
         int totalBytes = 0;
+    }
+
+    private static StringMetadata analyzeString(String str, Charset charset) {
+        StringMetadata metadata = new StringMetadata();
+        CharsetEncoder encoder = charset.newEncoder();
 
         for (int i = 0; i < str.length(); ) {
             int codePoint = str.codePointAt(i);
-            
-            byteOffsetToCodePointIndexMap.put(totalBytes, codePointStartIndices.size());
-            codePointStartIndices.add(i);
+
+            metadata.byteOffsetToCodePointIndexMap.put(metadata.totalBytes, metadata.codePointStartIndices.size());
+            metadata.codePointStartIndices.add(i);
 
             try {
                 String codePointStr = new String(Character.toChars(codePoint));
                 ByteBuffer bb = encoder.encode(java.nio.CharBuffer.wrap(codePointStr));
                 int byteLength = bb.limit();
-                codePointByteLengths.add(byteLength);
-                totalBytes += byteLength;
+                metadata.codePointByteLengths.add(byteLength);
+                metadata.totalBytes += byteLength;
             } catch (CharacterCodingException e) {
-                // For unencodable characters, mark with a special length (-1) and assume a byte length of 1
-                // for placeholder purposes, as they will be replaced by a single space.
-                codePointByteLengths.add(-1);
-                totalBytes += 1; // Assume 1 byte for the placeholder space
+                metadata.codePointByteLengths.add(UNENCODABLE_CHAR_LENGTH);
+                metadata.totalBytes += PLACEHOLDER_BYTE_LENGTH;
             }
             i += Character.charCount(codePoint);
         }
+        return metadata;
+    }
 
-        // 2. Determine effective byte range
-        int effectiveStart;
-        if (start >= 0) {
-            effectiveStart = start;
-        } else { // start < 0
-            effectiveStart = totalBytes + start;
-        }
-
-        if (effectiveStart < 0 || effectiveStart >= totalBytes) {
-            return EMPTY_STRING;
-        }
-
-        int effectiveEnd = Math.min(effectiveStart + len, totalBytes);
-        if (effectiveEnd <= effectiveStart) {
-            return EMPTY_STRING;
-        }
-
-        // 3. Build the result string byte by byte
+    private static String buildSubstring(String originalStr, StringMetadata metadata, int startByte, int endByte) {
         StringBuilder result = new StringBuilder();
-        for (int currentByte = effectiveStart; currentByte < effectiveEnd; ) {
-            Integer codePointIndex = byteOffsetToCodePointIndexMap.get(currentByte);
+        for (int currentByte = startByte; currentByte < endByte; ) {
+            Integer codePointIndex = metadata.byteOffsetToCodePointIndexMap.get(currentByte);
 
             if (codePointIndex != null) {
-                // Current byte is the beginning of a code point
-                int charByteLength = codePointByteLengths.get(codePointIndex);
+                int charByteLength = metadata.codePointByteLengths.get(codePointIndex);
 
-                if (charByteLength == -1) {
-                    // This was an unencodable character.
+                if (charByteLength == UNENCODABLE_CHAR_LENGTH) {
                     result.append(PADDING_CHAR);
-                    currentByte++;
+                    currentByte += PLACEHOLDER_BYTE_LENGTH;
                 } else {
-                    int charStartIndex = codePointStartIndices.get(codePointIndex);
-                    if (currentByte + charByteLength <= effectiveEnd) {
-                        // Code point fits completely within the selection
-                        int codePoint = str.codePointAt(charStartIndex);
+                    if (currentByte + charByteLength <= endByte) {
+                        int charStartIndex = metadata.codePointStartIndices.get(codePointIndex);
+                        int codePoint = originalStr.codePointAt(charStartIndex);
                         result.append(Character.toChars(codePoint));
                         currentByte += charByteLength;
                     } else {
-                        // Code point is truncated by the end of the selection
                         result.append(PADDING_CHAR);
                         currentByte++;
                     }
                 }
             } else {
-                // Current byte is in the middle of a multi-byte character
                 result.append(PADDING_CHAR);
                 currentByte++;
             }
         }
-
         return result.toString();
+    }
+    
+    private static int calculateEffectiveStart(int totalLength, int start) {
+        return start >= 0 ? start : totalLength + start;
     }
 }

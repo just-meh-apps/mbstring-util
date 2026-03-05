@@ -10,6 +10,8 @@ This library provides functionality to extract substrings based on character len
 
 - **`substr(String, int, int)`**: Extracts a substring based on the number of characters.
 - **`substrByBytes(String, int, int, Charset)`**: Extracts a substring based on byte length, preventing character corruption.
+- **`length(String)`**: Returns the number of characters (code points) in a string.
+- **`lengthByBytes(String, Charset)`**: Returns the byte length of a string for a given charset.
 - **Negative Offsets**: Supports negative indexing to calculate positions from the end of the string.
 - **Multi-encoding Support**: Can be used with any charset supported by Java, such as UTF-8 and EUC-KR.
 
@@ -57,6 +59,26 @@ MbStringUtil.substrByBytes("a👍가", 0, 4, euckr)      // returns "a 가"
 MbStringUtil.substrByBytes("가나다abc", 0, 3, StandardCharsets.UTF_8) // returns "가"
 MbStringUtil.substrByBytes("가나다abc", 2, 4, StandardCharsets.UTF_8) // returns " 나"
 MbStringUtil.substrByBytes("가나다abc", 2, 5, StandardCharsets.UTF_8) // returns " 나 "
+```
+
+---
+
+### `length` and `lengthByBytes`
+
+Calculates the length of a string in characters (code points) or bytes. Returns 0 for null or empty strings.
+
+This `length` method may produce a different result from `String.length()`. This method counts the actual number of characters (code points), while `String.length()` counts the number of 16-bit `char` units. For example, a supplementary character like an emoji ("👍") is treated as a single character here, but as two `char`s by `String.length()`.
+
+```java
+// length
+MbStringUtil.length(null)       // returns 0
+MbStringUtil.length("👍a가")    // returns 3
+// Note: "👍a가".length() would return 4
+
+// lengthByBytes
+Charset euckr = Charset.forName("EUC-KR");
+MbStringUtil.lengthByBytes("가나다", euckr) // returns 6
+MbStringUtil.lengthByBytes("👍a가", StandardCharsets.UTF_8) // returns 8
 ```
 
 ## Building

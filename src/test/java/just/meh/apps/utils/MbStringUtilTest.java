@@ -88,4 +88,41 @@ class MbStringUtilTest {
         assertEquals(" 가", MbStringUtil.substrByBytes("a👍가", 1, 3, EUCKR));
         assertEquals(" ", MbStringUtil.substrByBytes("a👍가", 1, 1, EUCKR));
     }
+
+    @Test
+    @DisplayName("length(String)")
+    void testLength() {
+        // null or empty
+        assertEquals(0, MbStringUtil.length(null));
+        assertEquals(0, MbStringUtil.length(""));
+
+        // regular strings
+        assertEquals(3, MbStringUtil.length("abc"));
+        assertEquals(3, MbStringUtil.length("가나다"));
+
+        // string with supplementary characters
+        assertEquals(3, MbStringUtil.length("👍a가"));
+        assertEquals(1, MbStringUtil.length("👍"));
+    }
+
+    @Test
+    @DisplayName("lengthByBytes(String, Charset)")
+    void testLengthByBytes() {
+        // str is null or empty
+        assertEquals(0, MbStringUtil.lengthByBytes(null, StandardCharsets.UTF_8));
+        assertEquals(0, MbStringUtil.lengthByBytes("", StandardCharsets.UTF_8));
+
+        // EUC-KR Examples
+        assertEquals(3, MbStringUtil.lengthByBytes("abc", EUCKR));
+        assertEquals(6, MbStringUtil.lengthByBytes("가나다", EUCKR));
+
+        // UTF-8 Examples
+        assertEquals(3, MbStringUtil.lengthByBytes("abc", StandardCharsets.UTF_8));
+        assertEquals(9, MbStringUtil.lengthByBytes("가나다", StandardCharsets.UTF_8));
+        assertEquals(8, MbStringUtil.lengthByBytes("👍a가", StandardCharsets.UTF_8)); // 4 + 1 + 3
+
+        // Unencodable character example (EUC-KR cannot encode emoji)
+        // It gets replaced by a '?' which is 1 byte in EUC-KR.
+        assertEquals(1, MbStringUtil.lengthByBytes("👍", EUCKR));
+    }
 }

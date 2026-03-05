@@ -10,6 +10,8 @@
 
 - **`substr(String, int, int)`**: 문자 수를 기준으로 서브스트링을 추출합니다.
 - **`substrByBytes(String, int, int, Charset)`**: 바이트 길이를 기준으로 서브스트링을 추출하며, 문자 깨짐을 방지합니다.
+- **`length(String)`**: 문자열의 문자(코드 포인트) 개수를 반환합니다.
+- **`lengthByBytes(String, Charset)`**: 주어진 문자셋에 대한 문자열의 바이트 길이를 반환합니다.
 - **음수 오프셋**: 문자열의 끝에서부터 위치를 계산하는 음수 인덱싱을 지원합니다.
 - **다양한 인코딩 지원**: UTF-8, EUC-KR 등 Java에서 지원하는 모든 문자셋을 사용할 수 있습니다.
 
@@ -57,6 +59,26 @@ MbStringUtil.substrByBytes("a👍가", 0, 4, euckr)      // 반환값: "a 가"
 MbStringUtil.substrByBytes("가나다abc", 0, 3, StandardCharsets.UTF_8) // 반환값: "가"
 MbStringUtil.substrByBytes("가나다abc", 2, 4, StandardCharsets.UTF_8) // 반환값: " 나"
 MbStringUtil.substrByBytes("가나다abc", 2, 5, StandardCharsets.UTF_8) // 반환값: " 나 "
+```
+
+---
+
+### `length` 및 `lengthByBytes`
+
+문자열의 길이를 문자(코드 포인트) 또는 바이트 단위로 계산합니다. null 또는 빈 문자열의 경우 0을 반환합니다.
+
+`length` 메소드는 `String.length()`와 다른 결과를 낼 수 있습니다. 이 메소드는 실제 문자의 개수(코드 포인트)를 세는 반면, `String.length()`는 16비트 `char` 단위의 수를 셉니다. 예를 들어, 이모지("👍")와 같은 보충 문자는 이 메소드에서는 하나의 문자로 취급되지만, `String.length()`에서는 두 개의 `char`로 취급됩니다.
+
+```java
+// length
+MbStringUtil.length(null)      // 반환값: 0
+MbStringUtil.length("👍a가")   // 반환값: 3
+// 참고: "👍a가".length()의 반환값은 4입니다.
+
+// lengthByBytes
+Charset euckr = Charset.forName("EUC-KR");
+MbStringUtil.lengthByBytes("가나다", euckr) // 반환값: 6
+MbStringUtil.lengthByBytes("👍a가", StandardCharsets.UTF_8) // 반환값: 8
 ```
 
 ## 빌드하기
