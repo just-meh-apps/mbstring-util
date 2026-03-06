@@ -23,6 +23,12 @@ This library provides functionality to extract substrings and pad strings based 
 - **Negative Offsets**: Supports negative indexing to calculate positions from the end of the string.
 - **Multi-encoding Support**: Can be used with any charset supported by Java, such as UTF-8 and EUC-KR.
 
+## Requirements
+
+This project is built using Java 8. To build and use this library, you will need:
+
+- Java 8 or higher
+
 ## API Usage
 
 ---
