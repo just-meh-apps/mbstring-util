@@ -410,6 +410,176 @@ public final class MbStringUtil {
         return str.getBytes(charset).length;
     }
 
+    /**
+     * Left pads a string with a specified string to a certain length.
+     * Padding is based on character (code point) count.
+     * <p>
+     * 지정된 문자열로 문자열을 특정 길이까지 왼쪽으로 채웁니다.
+     * 패딩은 문자(코드 포인트) 수를 기준으로 합니다.
+     *
+     * <pre>
+     * MbStringUtils.leftPad("한글", 7, "ㅎㄹㄹ")  = "ㅎㄹㄹㅎㄹ한글"
+     * MbStringUtils.leftPad("한글", 5, "ㅎㄹㄹ")  = "ㅎㄹㄹ한글"
+     * MbStringUtils.leftPad("한글", 4, "ㅎㄹㄹ")  = "ㅎㄹ한글"
+     * MbStringUtils.leftPad("한글", 2, "ㅎㄹㄹ")  = "한글"
+     * MbStringUtils.leftPad("한글", -1, "ㅎㄹㄹ") = "한글"
+     * MbStringUtils.leftPad("한글", 5, null)     = "   한글"
+     * </pre>
+     *
+     * @param str    The string to pad. (패딩할 문자열)
+     * @param padLen The total length to pad to. (패딩할 총 길이)
+     * @param padStr The string to pad with. If null or empty, a space is used. (패딩에 사용할 문자열. null이거나 비어 있으면 공백이 사용됩니다.)
+     * @return The padded string. (패딩된 문자열)
+     */
+    public static String leftPad(String str, int padLen, String padStr) {
+        return pad(str, padLen, padStr, true);
+    }
+
+    /**
+     * Right pads a string with a specified string to a certain length.
+     * Padding is based on character (code point) count.
+     * <p>
+     * 지정된 문자열로 문자열을 특정 길이까지 오른쪽으로 채웁니다.
+     * 패딩은 문자(코드 포인트) 수를 기준으로 합니다.
+     *
+     * <pre>
+     * MbStringUtils.rightPad("한글", 7, "ㅎㄹㄹ")  = "한글ㅎㄹㄹㅎㄹ"
+     * MbStringUtils.rightPad("한글", 5, "ㅎㄹㄹ")  = "한글ㅎㄹㄹ"
+     * MbStringUtils.rightPad("한글", 4, "ㅎㄹㄹ")  = "한글ㅎㄹ"
+     * MbStringUtils.rightPad("한글", 2, "ㅎㄹㄹ")  = "한글"
+     * MbStringUtils.rightPad("한글", -1, "ㅎㄹㄹ") = "한글"
+     * MbStringUtils.rightPad("한글", 5, null)     = "한글   "
+     * </pre>
+     *
+     * @param str    The string to pad. (패딩할 문자열)
+     * @param padLen The total length to pad to. (패딩할 총 길이)
+     * @param padStr The string to pad with. If null or empty, a space is used. (패딩에 사용할 문자열. null이거나 비어 있으면 공백이 사용됩니다.)
+     * @return The padded string. (패딩된 문자열)
+     */
+    public static String rightPad(String str, int padLen, String padStr) {
+        return pad(str, padLen, padStr, false);
+    }
+
+    /**
+     * Left pads a string with a specified string to a certain byte length.
+     * Padding is based on byte length for a given charset.
+     * <p>
+     * 지정된 문자열로 문자열을 특정 바이트 길이까지 왼쪽으로 채웁니다.
+     * 패딩은 주어진 문자 집합의 바이트 길이를 기준으로 합니다.
+     *
+     * <pre>
+     * // Using StandardCharsets.UTF_8 where '한' is 3 bytes, 'ㅎ' is 3 bytes.
+     * MbStringUtils.leftPadByBytes("한글", 15, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "ㅎㄹㄹ한글"
+     * MbStringUtils.leftPadByBytes("한글", 12, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "ㅎㄹ한글"
+     * MbStringUtils.leftPadByBytes("한글", 11, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "ㅎ  한글"
+     * MbStringUtils.leftPadByBytes("한글", 6, "ㅎㄹㄹ", StandardCharsets.UTF_8)  = "한글"
+     * MbStringUtils.leftPadByBytes("한글", -1, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "한글"
+     * MbStringUtils.leftPadByBytes("한글", 9, null, StandardCharsets.UTF_8)    = "   한글"
+     * </pre>
+     *
+     * @param str     The string to pad. (패딩할 문자열)
+     * @param padLen  The total byte length to pad to. (패딩할 총 바이트 길이)
+     * @param padStr  The string to pad with. If null or empty, a space is used. (패딩에 사용할 문자열. null이거나 비어 있으면 공백이 사용됩니다.)
+     * @param charset The charset to use for byte calculations. (바이트 계산에 사용할 문자 집합)
+     * @return The padded string. (패딩된 문자열)
+     */
+    public static String leftPadByBytes(String str, int padLen, String padStr, Charset charset) {
+        return padByBytes(str, padLen, padStr, charset, true);
+    }
+
+    /**
+     * Right pads a string with a specified string to a certain byte length.
+     * Padding is based on byte length for a given charset.
+     * <p>
+     * 지정된 문자열로 문자열을 특정 바이트 길이까지 오른쪽으로 채웁니다.
+     * 패딩은 주어진 문자 집합의 바이트 길이를 기준으로 합니다.
+     *
+     * <pre>
+     * // Using StandardCharsets.UTF_8 where '한' is 3 bytes, 'ㅎ' is 3 bytes.
+     * MbStringUtils.rightPadByBytes("한글", 15, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "한글ㅎㄹㄹ"
+     * MbStringUtils.rightPadByBytes("한글", 12, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "한글ㅎㄹ"
+     * MbStringUtils.rightPadByBytes("한글", 11, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "한글ㅎ  "
+     * MbStringUtils.rightPadByBytes("한글", 6, "ㅎㄹㄹ", StandardCharsets.UTF_8)  = "한글"
+     * MbStringUtils.rightPadByBytes("한글", -1, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "한글"
+     * MbStringUtils.rightPadByBytes("한글", 9, null, StandardCharsets.UTF_8)    = "한글   "
+     * </pre>
+     *
+     * @param str     The string to pad. (패딩할 문자열)
+     * @param padLen  The total byte length to pad to. (패딩할 총 바이트 길이)
+     * @param padStr  The string to pad with. If null or empty, a space is used. (패딩에 사용할 문자열. null이거나 비어 있으면 공백이 사용됩니다.)
+     * @param charset The charset to use for byte calculations. (바이트 계산에 사용할 문자 집합)
+     * @return The padded string. (패딩된 문자열)
+     */
+    public static String rightPadByBytes(String str, int padLen, String padStr, Charset charset) {
+        return padByBytes(str, padLen, padStr, charset, false);
+    }
+
+    private static String pad(String str, int totalLen, String padStr, boolean isLeft) {
+        if (str == null) str = EMPTY_STRING;
+        int strLen = length(str); // code points
+        if (totalLen <= strLen) {
+            return str;
+        }
+
+        String effectivePadStr = (padStr == null || padStr.isEmpty()) ? String.valueOf(PADDING_CHAR) : padStr;
+        int padStrLen = length(effectivePadStr);
+        if (padStrLen == 0) { // Fallback for empty pad string after validation
+            effectivePadStr = String.valueOf(PADDING_CHAR);
+            padStrLen = 1;
+        }
+
+        int paddingNeeded = totalLen - strLen;
+        StringBuilder padding = new StringBuilder();
+
+        int repeats = paddingNeeded / padStrLen;
+        for (int i = 0; i < repeats; i++) {
+            padding.append(effectivePadStr);
+        }
+        int remaining = paddingNeeded % padStrLen;
+        if (remaining > 0) {
+            padding.append(substr(effectivePadStr, 0, remaining));
+        }
+
+        if (isLeft) {
+            return padding.toString() + str;
+        } else {
+            return str + padding.toString();
+        }
+    }
+
+    private static String padByBytes(String str, int totalLen, String padStr, Charset charset, boolean isLeft) {
+        if (str == null) str = EMPTY_STRING;
+        int strBytes = lengthByBytes(str, charset);
+        if (totalLen <= strBytes) {
+            return str;
+        }
+
+        String effectivePadStr = (padStr == null || padStr.isEmpty()) ? String.valueOf(PADDING_CHAR) : padStr;
+        int padStrBytes = lengthByBytes(effectivePadStr, charset);
+        if (padStrBytes == 0) {
+            effectivePadStr = String.valueOf(PADDING_CHAR);
+            padStrBytes = lengthByBytes(effectivePadStr, charset);
+        }
+
+        int bytesToPad = totalLen - strBytes;
+        StringBuilder padding = new StringBuilder();
+
+        int repeats = bytesToPad / padStrBytes;
+        for (int i = 0; i < repeats; i++) {
+            padding.append(effectivePadStr);
+        }
+        int remainingBytes = bytesToPad % padStrBytes;
+        if (remainingBytes > 0) {
+            padding.append(substrByBytes(effectivePadStr, 0, remainingBytes, charset));
+        }
+
+        if (isLeft) {
+            return padding.toString() + str;
+        } else {
+            return str + padding.toString();
+        }
+    }
+
     // 문자열 분석 결과를 저장하는 내부 클래스입니다.
     private static class StringMetadata {
         final List<Integer> codePointStartIndices = new ArrayList<>(); // 각 코드 포인트의 시작 char 인덱스
