@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +22,8 @@ public final class MbStringUtil {
     private static final int UNENCODABLE_CHAR_LENGTH = -1; // 인코딩 불가능한 문자의 길이를 나타내는 값
     private static final int PLACEHOLDER_BYTE_LENGTH = 1; // 인코딩 불가능한 문자를 대체하는 플레이스홀더의 바이트 길이
 
+    private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8; 
+
     /**
      * Private constructor to prevent instantiation of this utility class.
      * <p>
@@ -28,6 +31,37 @@ public final class MbStringUtil {
      */
     private MbStringUtil() {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
+
+    /**
+     * Extracts a substring from the {@code start} code point index to the end of the string.
+     * This method is safe for supplementary characters (e.g., emojis).
+     * <p>
+     * {@code start} 코드 포인트 인덱스부터 문자열 끝까지의 하위 문자열을 추출합니다.
+     * 이모티콘과 같은 보충 문자에 안전합니다.
+     *
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.substr(null, 0)      = ""
+     * MbStringUtil.substr("", 0)        = ""
+     *
+     * // start is positive
+     * MbStringUtil.substr("가나다abc", 3)  = "abc"
+     *
+     * // start is negative
+     * MbStringUtil.substr("가나다abc", -2) = "bc"
+     *
+     * // Emoji examples
+     * MbStringUtil.substr("👍a가나", 1)  = "a가나"
+     * </pre>
+     *
+     * @param str The source string. (원본 문자열)
+     * @param start The starting code point index (0-based). If negative, it is an offset from the end. (시작 코드 포인트 인덱스 (0부터 시작). 음수일 경우 끝에서의 오프셋입니다.)
+     * @return The resulting substring. (결과 하위 문자열)
+     * @see #substr(String, int, int)
+     */
+    public static String substr(String str, int start) {
+        return substr(str, start, length(str));
     }
 
     /**
@@ -98,6 +132,67 @@ public final class MbStringUtil {
 
         // substring을 추출하여 반환합니다.
         return str.substring(startCharIndex, endCharIndex);
+    }
+
+    /**
+     * Extracts a substring from the {@code start} byte offset to the end of the string, using the default UTF-8 charset.
+     * <p>
+     * 기본 UTF-8 문자 집합을 사용하여 {@code start} 바이트 오프셋부터 문자열 끝까지의 하위 문자열을 추출합니다.
+     *
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.substrByBytes(null, 0)      = ""
+     * MbStringUtil.substrByBytes("", 0)        = ""
+     *
+     * // "가나다abc" is 12 bytes in UTF-8 (3 * 3 + 3 * 1)
+     * MbStringUtil.substrByBytes("가나다abc", 3)  = "나다abc"
+     * MbStringUtil.substrByBytes("가나다abc", -5) = "  abc"
+     *
+     * // "👍a가" is 8 bytes in UTF-8 (4 + 1 + 3)
+     * MbStringUtil.substrByBytes("👍a가", 4) = "a가"
+     * </pre>
+     *
+     * @param str The source string. (원본 문자열)
+     * @param start The starting byte offset (0-based). If negative, it is an offset from the end. (시작 바이트 오프셋 (0부터 시작). 음수일 경우 끝에서의 오프셋입니다.)
+     * @return The resulting substring, padded with spaces if necessary. (결과 하위 문자열, 필요한 경우 공백으로 채워집니다.)
+     * @see #substrByBytes(String, int, int, Charset)
+     */
+    public static String substrByBytes(String str, int start) {
+        return substrByBytes(str, start, lengthByBytes(str));
+    }
+
+    /**
+     * Extracts a substring from a string based on byte length using the default UTF-8 charset.
+     * <p>
+     * 기본 UTF-8 문자 집합을 사용하여 바이트 길이를 기준으로 문자열에서 하위 문자열을 추출합니다.
+     *
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.substrByBytes(null, 0, 1)      = ""
+     * MbStringUtil.substrByBytes("", 0, 1)        = ""
+     *
+     * // len is zero or negative
+     * MbStringUtil.substrByBytes("가나다abc", 2, 0)  = ""
+     * MbStringUtil.substrByBytes("가나다abc", 2, -2) = ""
+     *
+     * // UTF-8 Examples
+     * MbStringUtil.substrByBytes("가나다abc", 0, 3) = "가"
+     * MbStringUtil.substrByBytes("가나다abc", 2, 4) = " 나"
+     * MbStringUtil.substrByBytes("가나다abc", 2, 5) = " 나 "
+     *
+     * // UTF-8 Emoji Examples ("👍a가" is 8 bytes: 4 + 1 + 3)
+     * MbStringUtil.substrByBytes("👍a가", 0, 4) = "👍"
+     * MbStringUtil.substrByBytes("👍a가", 0, 5) = "👍a"
+     * </pre>
+     *
+     * @param str The source string. (원본 문자열)
+     * @param start The starting byte offset (0-based). If negative, it is an offset from the end. (시작 바이트 오프셋 (0부터 시작). 음수일 경우 끝에서의 오프셋입니다.)
+     * @param len The desired length of the substring in bytes. (바이트 단위의 원하는 하위 문자열 길이)
+     * @return The resulting substring, padded with spaces if necessary. (결과 하위 문자열, 필요한 경우 공백으로 채워집니다.)
+     * @see #substrByBytes(String, int, int, Charset)
+     */
+    public static String substrByBytes(String str, int start, int len) {
+        return substrByBytes(str, start, len, DEFAULT_CHARSET);
     }
 
     /**
@@ -183,6 +278,37 @@ public final class MbStringUtil {
     }
 
     /**
+     * Extracts a substring from the {@code start} code point index to the end of the string.
+     * This method is a wrapper around {@link #substring(String, int, int)}.
+     * <p>
+     * {@code start} 코드 포인트 인덱스부터 문자열 끝까지의 하위 문자열을 추출합니다.
+     * 이 메소드는 {@link #substring(String, int, int)}를 감싸는 래퍼입니다.
+     *
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.substring(null, 0)      = ""
+     * MbStringUtil.substring("", 0)        = ""
+     *
+     * // start is positive
+     * MbStringUtil.substring("가나다abc", 3)  = "abc"
+     *
+     * // start is negative
+     * MbStringUtil.substring("가나다abc", -2) = "bc"
+     *
+     * // Emoji examples
+     * MbStringUtil.substring("👍a가나", 1)  = "a가나"
+     * </pre>
+     *
+     * @param str The source string. (원본 문자열)
+     * @param start The beginning code point index, inclusive. Negative values are offsets from the end. (시작 코드 포인트 인덱스(포함). 음수 값은 끝에서의 오프셋입니다.)
+     * @return The specified substring. (지정된 하위 문자열)
+     * @see #substring(String, int, int)
+     */
+    public static String substring(String str, int start) {
+        return substring(str, start, length(str));
+    }
+
+    /**
      * Extracts a substring from a string using start and end code point indices.
      * This method is a wrapper around {@link #substr(String, int, int)}.
      * <p>
@@ -250,6 +376,67 @@ public final class MbStringUtil {
 
         int len = actualEnd - actualStart;
         return substr(str, actualStart, len);
+    }
+    
+    /**
+     * Extracts a substring from the {@code start} byte offset to the end of the string, using the default UTF-8 charset.
+     * <p>
+     * 기본 UTF-8 문자 집합을 사용하여 {@code start} 바이트 오프셋부터 문자열 끝까지의 하위 문자열을 추출합니다.
+     *
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.substringByBytes(null, 0)      = ""
+     * MbStringUtil.substringByBytes("", 0)        = ""
+     *
+     * // "가나다abc" is 12 bytes in UTF-8
+     * MbStringUtil.substringByBytes("가나다abc", 3)  = "나다abc"
+     * MbStringUtil.substringByBytes("가나다abc", -5) = "  abc"
+     *
+     * // "👍a가" is 8 bytes in UTF-8
+     * MbStringUtil.substringByBytes("👍a가", 4) = "a가"
+     * </pre>
+     *
+     * @param str The source string. (원본 문자열)
+     * @param start The beginning byte index, inclusive. Negative values are offsets from the end. (시작 바이트 인덱스(포함). 음수 값은 끝에서의 오프셋입니다.)
+     * @return The specified substring. (지정된 하위 문자열)
+     * @see #substringByBytes(String, int, int, Charset)
+     */
+    public static String substringByBytes(String str, int start) {
+        return substringByBytes(str, start, lengthByBytes(str));        
+    }
+
+    /**
+     * Extracts a substring from a string using start and end byte indices, with the default UTF-8 charset.
+     * <p>
+     * 기본 UTF-8 문자 집합을 사용하여 시작 및 끝 바이트 인덱스로 문자열에서 하위 문자열을 추출합니다.
+     *
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.substringByBytes(null, 0, 1)      = ""
+     * MbStringUtil.substringByBytes("", 0, 1)        = ""
+     *
+     * // start >= end
+     * MbStringUtil.substringByBytes("가나다abc", 2, 2)  = ""
+     * MbStringUtil.substringByBytes("가나다abc", 2, 1) = ""
+     *
+     * // UTF-8 Examples
+     * MbStringUtil.substringByBytes("가나다abc", 0, 3) = "가"
+     * MbStringUtil.substringByBytes("가나다abc", 2, 6) = " 나"
+     * MbStringUtil.substringByBytes("가나다abc", 2, 7) = " 나 "
+     *
+     * // UTF-8 Emoji Examples ("👍a가" is 8 bytes: 4 + 1 + 3)
+     * MbStringUtil.substringByBytes("👍a가", 0, 4) = "👍"
+     * MbStringUtil.substringByBytes("👍a가", 0, 5) = "👍a"
+     * </pre>
+     *
+     * @param str The source string. (원본 문자열)
+     * @param start The beginning byte index, inclusive. Negative values are offsets from the end. (시작 바이트 인덱스(포함). 음수 값은 끝에서의 오프셋입니다.)
+     * @param end The ending byte index, exclusive. Negative values are offsets from the end. (끝 바이트 인덱스(제외). 음수 값은 끝에서의 오프셋입니다.)
+     * @return The specified substring. (지정된 하위 문자열)
+     * @see #substringByBytes(String, int, int, Charset)
+     */
+    public static String substringByBytes(String str, int start, int end) {
+        return substringByBytes(str, start, end, DEFAULT_CHARSET);
     }
 
     /**
@@ -373,6 +560,31 @@ public final class MbStringUtil {
         return str.codePointCount(0, str.length());
     }
 
+    
+    /**
+     * Returns the byte length of a string using the default UTF-8 charset.
+     * <p>
+     * 기본 UTF-8 문자 집합을 사용하여 문자열의 바이트 길이를 반환합니다.
+     *
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.lengthByBytes(null)      = 0
+     * MbStringUtil.lengthByBytes("")        = 0
+     *
+     * // UTF-8 Examples
+     * MbStringUtil.lengthByBytes("abc")   = 3
+     * MbStringUtil.lengthByBytes("가나다") = 9
+     * MbStringUtil.lengthByBytes("👍a가") = 8
+     * </pre>
+     *
+     * @param str The string to measure. (측정할 문자열)
+     * @return The length of the string in bytes. (문자열의 바이트 단위 길이)
+     * @see #lengthByBytes(String, Charset)
+     */
+    public static int lengthByBytes(String str) {
+        return lengthByBytes(str, DEFAULT_CHARSET);
+    }
+
     /**
      * Returns the byte length of a string for a given charset, returning 0 for null or empty strings.
      * <p>
@@ -411,6 +623,51 @@ public final class MbStringUtil {
     }
 
     /**
+     * Left pads a string with spaces to a certain length.
+     * <p>
+     * 지정된 길이만큼 문자열 왼쪽에 공백을 채웁니다.
+     *
+     * <pre>
+     * MbStringUtil.leftPad(null, 5)     = "     "
+     * MbStringUtil.leftPad("", 5)       = "     "
+     * MbStringUtil.leftPad("한글", 5) = "   한글"
+     * MbStringUtil.leftPad("한글", 2) = "한글"
+     * MbStringUtil.leftPad("한글", -1) = "한글"
+     * </pre>
+     *
+     * @param str    The string to pad. (패딩할 문자열)
+     * @param padLen The total length to pad to. (패딩할 총 길이)
+     * @return The padded string. (패딩된 문자열)
+     * @see #leftPad(String, int, String)
+     */
+    public static String leftPad(String str, int padLen) {
+        return leftPad(str, padLen, PADDING_CHAR);
+    }
+
+    /**
+     * Left pads a string with a specified character to a certain length.
+     * <p>
+     * 지정된 길이만큼 문자열 왼쪽에 특정 문자를 채웁니다.
+     *
+     * <pre>
+     * MbStringUtil.leftPad(null, 5, '#')     = "#####"
+     * MbStringUtil.leftPad("", 5, '#')       = "#####"
+     * MbStringUtil.leftPad("한글", 5, '#') = "###한글"
+     * MbStringUtil.leftPad("한글", 2, '#') = "한글"
+     * MbStringUtil.leftPad("한글", -1, '#') = "한글"
+     * </pre>
+     *
+     * @param str     The string to pad. (패딩할 문자열)
+     * @param padLen  The total length to pad to. (패딩할 총 길이)
+     * @param padChar The character to pad with. (패딩에 사용할 문자)
+     * @return The padded string. (패딩된 문자열)
+     * @see #leftPad(String, int, String)
+     */
+    public static String leftPad(String str, int padLen, char padChar) {
+        return leftPad(str, padLen, String.valueOf(padChar));
+    }
+
+    /**
      * Left pads a string with a specified string to a certain length.
      * Padding is based on character (code point) count.
      * <p>
@@ -418,12 +675,12 @@ public final class MbStringUtil {
      * 패딩은 문자(코드 포인트) 수를 기준으로 합니다.
      *
      * <pre>
-     * MbStringUtils.leftPad("한글", 7, "ㅎㄹㄹ")  = "ㅎㄹㄹㅎㄹ한글"
-     * MbStringUtils.leftPad("한글", 5, "ㅎㄹㄹ")  = "ㅎㄹㄹ한글"
-     * MbStringUtils.leftPad("한글", 4, "ㅎㄹㄹ")  = "ㅎㄹ한글"
-     * MbStringUtils.leftPad("한글", 2, "ㅎㄹㄹ")  = "한글"
-     * MbStringUtils.leftPad("한글", -1, "ㅎㄹㄹ") = "한글"
-     * MbStringUtils.leftPad("한글", 5, null)     = "   한글"
+     * MbStringUtil.leftPad("한글", 7, "ㅎㄹㄹ")  = "ㅎㄹㄹㅎㄹ한글"
+     * MbStringUtil.leftPad("한글", 5, "ㅎㄹㄹ")  = "ㅎㄹㄹ한글"
+     * MbStringUtil.leftPad("한글", 4, "ㅎㄹㄹ")  = "ㅎㄹ한글"
+     * MbStringUtil.leftPad("한글", 2, "ㅎㄹㄹ")  = "한글"
+     * MbStringUtil.leftPad("한글", -1, "ㅎㄹㄹ") = "한글"
+     * MbStringUtil.leftPad("한글", 5, null)     = "   한글"
      * </pre>
      *
      * @param str    The string to pad. (패딩할 문자열)
@@ -436,6 +693,51 @@ public final class MbStringUtil {
     }
 
     /**
+     * Right pads a string with spaces to a certain length.
+     * <p>
+     * 지정된 길이만큼 문자열 오른쪽에 공백을 채웁니다.
+     *
+     * <pre>
+     * MbStringUtil.rightPad(null, 5)     = "     "
+     * MbStringUtil.rightPad("", 5)      = "     "
+     * MbStringUtil.rightPad("한글", 5) = "한글   "
+     * MbStringUtil.rightPad("한글", 2) = "한글"
+     * MbStringUtil.rightPad("한글", -1) = "한글"
+     * </pre>
+     *
+     * @param str    The string to pad. (패딩할 문자열)
+     * @param padLen The total length to pad to. (패딩할 총 길이)
+     * @return The padded string. (패딩된 문자열)
+     * @see #rightPad(String, int, String)
+     */
+    public static String rightPad(String str, int padLen) {
+        return rightPad(str, padLen, PADDING_CHAR);
+    }
+
+    /**
+     * Right pads a string with a specified character to a certain length.
+     * <p>
+     * 지정된 길이만큼 문자열 오른쪽에 특정 문자를 채웁니다.
+     *
+     * <pre>
+     * MbStringUtil.rightPad(null, 5, '#')     = "#####"
+     * MbStringUtil.rightPad("", 5, '#')      = "#####"
+     * MbStringUtil.rightPad("한글", 5, '#') = "한글###"
+     * MbStringUtil.rightPad("한글", 2, '#') = "한글"
+     * MbStringUtil.rightPad("한글", -1, '#') = "한글"
+     * </pre>
+     *
+     * @param str     The string to pad. (패딩할 문자열)
+     * @param padLen  The total length to pad to. (패딩할 총 길이)
+     * @param padChar The character to pad with. (패딩에 사용할 문자)
+     * @return The padded string. (패딩된 문자열)
+     * @see #rightPad(String, int, String)
+     */
+    public static String rightPad(String str, int padLen, char padChar) {
+        return rightPad(str, padLen, String.valueOf(padChar));
+    }
+    
+    /**
      * Right pads a string with a specified string to a certain length.
      * Padding is based on character (code point) count.
      * <p>
@@ -443,12 +745,12 @@ public final class MbStringUtil {
      * 패딩은 문자(코드 포인트) 수를 기준으로 합니다.
      *
      * <pre>
-     * MbStringUtils.rightPad("한글", 7, "ㅎㄹㄹ")  = "한글ㅎㄹㄹㅎㄹ"
-     * MbStringUtils.rightPad("한글", 5, "ㅎㄹㄹ")  = "한글ㅎㄹㄹ"
-     * MbStringUtils.rightPad("한글", 4, "ㅎㄹㄹ")  = "한글ㅎㄹ"
-     * MbStringUtils.rightPad("한글", 2, "ㅎㄹㄹ")  = "한글"
-     * MbStringUtils.rightPad("한글", -1, "ㅎㄹㄹ") = "한글"
-     * MbStringUtils.rightPad("한글", 5, null)     = "한글   "
+     * MbStringUtil.rightPad("한글", 7, "ㅎㄹㄹ")  = "한글ㅎㄹㄹㅎㄹ"
+     * MbStringUtil.rightPad("한글", 5, "ㅎㄹㄹ")  = "한글ㅎㄹㄹ"
+     * MbStringUtil.rightPad("한글", 4, "ㅎㄹㄹ")  = "한글ㅎㄹ"
+     * MbStringUtil.rightPad("한글", 2, "ㅎㄹㄹ")  = "한글"
+     * MbStringUtil.rightPad("한글", -1, "ㅎㄹㄹ") = "한글"
+     * MbStringUtil.rightPad("한글", 5, null)     = "한글   "
      * </pre>
      *
      * @param str    The string to pad. (패딩할 문자열)
@@ -461,6 +763,84 @@ public final class MbStringUtil {
     }
 
     /**
+     * Left pads a string with spaces to a certain byte length using the default UTF-8 charset.
+     * <p>
+     * 기본 UTF-8 문자 집합을 사용하여 지정된 바이트 길이만큼 문자열 왼쪽에 공백을 채웁니다.
+     *
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.leftPadByBytes(null, 5)     = "     "
+     * MbStringUtil.leftPadByBytes("", 5)       = "     "
+     *
+     * // '한글' is 6 bytes in UTF-8
+     * MbStringUtil.leftPadByBytes("한글", 9) = "   한글"
+     * MbStringUtil.leftPadByBytes("한글", 6) = "한글"
+     * MbStringUtil.leftPadByBytes("한글", -1) = "한글"
+     * </pre>
+     *
+     * @param str    The string to pad. (패딩할 문자열)
+     * @param padLen The total byte length to pad to. (패딩할 총 바이트 길이)
+     * @return The padded string. (패딩된 문자열)
+     * @see #leftPadByBytes(String, int, String, Charset)
+     */
+    public static String leftPadByBytes(String str, int padLen) {
+        return leftPadByBytes(str, padLen, PADDING_CHAR);
+    }
+
+    /**
+     * Left pads a string with a specified character to a certain byte length using the default UTF-8 charset.
+     * <p>
+     * 기본 UTF-8 문자 집합을 사용하여 지정된 바이트 길이만큼 문자열 왼쪽에 특정 문자를 채웁니다.
+     *
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.leftPadByBytes(null, 5, '#')     = "#####"
+     * MbStringUtil.leftPadByBytes("", 5, '#')       = "#####"
+     * 
+     * // '한글' is 6 bytes in UTF-8, '#' is 1 byte
+     * MbStringUtil.leftPadByBytes("한글", 9, '#') = "###한글"
+     * MbStringUtil.leftPadByBytes("한글", 6, '#') = "한글"
+     * MbStringUtil.leftPadByBytes("한글", -1, '#') = "한글"
+     * </pre>
+     *
+     * @param str     The string to pad. (패딩할 문자열)
+     * @param padLen  The total byte length to pad to. (패딩할 총 바이트 길이)
+     * @param padChar The character to pad with. (패딩에 사용할 문자)
+     * @return The padded string. (패딩된 문자열)
+     * @see #leftPadByBytes(String, int, String, Charset)
+     */
+    public static String leftPadByBytes(String str, int padLen, char padChar) {
+        return leftPadByBytes(str, padLen, String.valueOf(padChar));
+    }
+
+    /**
+     * Left pads a string with a specified string to a certain byte length using the default UTF-8 charset.
+     * <p>
+     * 기본 UTF-8 문자 집합을 사용하여 지정된 바이트 길이만큼 문자열 왼쪽에 특정 문자열을 채웁니다.
+     *
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.leftPadByBytes(null, 8, "ㅎㄹ")      = "ㅎㄹ  "
+     * MbStringUtil.leftPadByBytes("", 8, "ㅎㄹ")        = "ㅎㄹ  "
+     * 
+     * // Using UTF-8 where '한' is 3 bytes, 'ㅎ' is 3 bytes.
+     * MbStringUtil.leftPadByBytes("한글", 12, "ㅎㄹㄹ") = "ㅎㄹ한글"
+     * MbStringUtil.leftPadByBytes("한글", 11, "ㅎㄹㄹ") = "ㅎ  한글"
+     * MbStringUtil.leftPadByBytes("한글", 6, "ㅎㄹㄹ")  = "한글"
+     * MbStringUtil.leftPadByBytes("한글", -1, "ㅎㄹㄹ") = "한글"
+     * </pre>
+     *
+     * @param str     The string to pad. (패딩할 문자열)
+     * @param padLen  The total byte length to pad to. (패딩할 총 바이트 길이)
+     * @param padStr  The string to pad with. (패딩에 사용할 문자열)
+     * @return The padded string. (패딩된 문자열)
+     * @see #leftPadByBytes(String, int, String, Charset)
+     */
+    public static String leftPadByBytes(String str, int padLen, String padStr) {
+        return leftPadByBytes(str, padLen, padStr, DEFAULT_CHARSET);
+    }
+
+    /**
      * Left pads a string with a specified string to a certain byte length.
      * Padding is based on byte length for a given charset.
      * <p>
@@ -469,12 +849,12 @@ public final class MbStringUtil {
      *
      * <pre>
      * // Using StandardCharsets.UTF_8 where '한' is 3 bytes, 'ㅎ' is 3 bytes.
-     * MbStringUtils.leftPadByBytes("한글", 15, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "ㅎㄹㄹ한글"
-     * MbStringUtils.leftPadByBytes("한글", 12, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "ㅎㄹ한글"
-     * MbStringUtils.leftPadByBytes("한글", 11, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "ㅎ  한글"
-     * MbStringUtils.leftPadByBytes("한글", 6, "ㅎㄹㄹ", StandardCharsets.UTF_8)  = "한글"
-     * MbStringUtils.leftPadByBytes("한글", -1, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "한글"
-     * MbStringUtils.leftPadByBytes("한글", 9, null, StandardCharsets.UTF_8)    = "   한글"
+     * MbStringUtil.leftPadByBytes("한글", 15, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "ㅎㄹㄹ한글"
+     * MbStringUtil.leftPadByBytes("한글", 12, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "ㅎㄹ한글"
+     * MbStringUtil.leftPadByBytes("한글", 11, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "ㅎ  한글"
+     * MbStringUtil.leftPadByBytes("한글", 6, "ㅎㄹㄹ", StandardCharsets.UTF_8)  = "한글"
+     * MbStringUtil.leftPadByBytes("한글", -1, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "한글"
+     * MbStringUtil.leftPadByBytes("한글", 9, null, StandardCharsets.UTF_8)    = "   한글"
      * </pre>
      *
      * @param str     The string to pad. (패딩할 문자열)
@@ -488,6 +868,84 @@ public final class MbStringUtil {
     }
 
     /**
+     * Right pads a string with spaces to a certain byte length using the default UTF-8 charset.
+     * <p>
+     * 기본 UTF-8 문자 집합을 사용하여 지정된 바이트 길이만큼 문자열 오른쪽에 공백을 채웁니다.
+     *
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.rightPadByBytes(null, 5)     = "     "
+     * MbStringUtil.rightPadByBytes("", 5)       = "     "
+     *
+     * // '한글' is 6 bytes in UTF-8
+     * MbStringUtil.rightPadByBytes("한글", 9) = "한글   "
+     * MbStringUtil.rightPadByBytes("한글", 6) = "한글"
+     * MbStringUtil.rightPadByBytes("한글", -1) = "한글"
+     * </pre>
+     *
+     * @param str    The string to pad. (패딩할 문자열)
+     * @param padLen The total byte length to pad to. (패딩할 총 바이트 길이)
+     * @return The padded string. (패딩된 문자열)
+     * @see #rightPadByBytes(String, int, String, Charset)
+     */
+    public static String rightPadByBytes(String str, int padLen) {
+        return rightPadByBytes(str, padLen, PADDING_CHAR);
+    }
+
+    /**
+     * Right pads a string with a specified character to a certain byte length using the default UTF-8 charset.
+     * <p>
+     * 기본 UTF-8 문자 집합을 사용하여 지정된 바이트 길이만큼 문자열 오른쪽에 특정 문자를 채웁니다.
+     *
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.rightPadByBytes(null, 5, '#')     = "#####"
+     * MbStringUtil.rightPadByBytes("", 5, '#')       = "#####"
+     * 
+     * // '한글' is 6 bytes in UTF-8, '#' is 1 byte
+     * MbStringUtil.rightPadByBytes("한글", 9, '#') = "한글###"
+     * MbStringUtil.rightPadByBytes("한글", 6, '#') = "한글"
+     * MbStringUtil.rightPadByBytes("한글", -1, '#') = "한글"
+     * </pre>
+     *
+     * @param str     The string to pad. (패딩할 문자열)
+     * @param padLen  The total byte length to pad to. (패딩할 총 바이트 길이)
+     * @param padChar The character to pad with. (패딩에 사용할 문자)
+     * @return The padded string. (패딩된 문자열)
+     * @see #rightPadByBytes(String, int, String, Charset)
+     */
+    public static String rightPadByBytes(String str, int padLen, char padChar) {
+        return rightPadByBytes(str, padLen, String.valueOf(padChar));
+    }
+
+    /**
+     * Right pads a string with a specified string to a certain byte length using the default UTF-8 charset.
+     * <p>
+     * 기본 UTF-8 문자 집합을 사용하여 지정된 바이트 길이만큼 문자열 오른쪽에 특정 문자열을 채웁니다.
+     *
+     * <pre>
+     * // str is null or empty
+     * MbStringUtil.rightPadByBytes(null, 8, "ㅎㄹ")      = "ㅎㄹ  "
+     * MbStringUtil.rightPadByBytes("", 8, "ㅎㄹ")        = "ㅎㄹ  "
+     *
+     * // Using UTF-8 where '한' is 3 bytes, 'ㅎ' is 3 bytes.
+     * MbStringUtil.rightPadByBytes("한글", 12, "ㅎㄹㄹ") = "한글ㅎㄹ"
+     * MbStringUtil.rightPadByBytes("한글", 11, "ㅎㄹㄹ") = "한글ㅎ  "
+     * MbStringUtil.rightPadByBytes("한글", 6, "ㅎㄹㄹ")  = "한글"
+     * MbStringUtil.rightPadByBytes("한글", -1, "ㅎㄹㄹ") = "한글"
+     * </pre>
+     *
+     * @param str     The string to pad. (패딩할 문자열)
+     * @param padLen  The total byte length to pad to. (패딩할 총 바이트 길이)
+     * @param padStr  The string to pad with. (패딩에 사용할 문자열)
+     * @return The padded string. (패딩된 문자열)
+     * @see #rightPadByBytes(String, int, String, Charset)
+     */
+    public static String rightPadByBytes(String str, int padLen, String padStr) {
+        return rightPadByBytes(str, padLen, padStr, DEFAULT_CHARSET);
+    }
+    
+    /**
      * Right pads a string with a specified string to a certain byte length.
      * Padding is based on byte length for a given charset.
      * <p>
@@ -496,12 +954,12 @@ public final class MbStringUtil {
      *
      * <pre>
      * // Using StandardCharsets.UTF_8 where '한' is 3 bytes, 'ㅎ' is 3 bytes.
-     * MbStringUtils.rightPadByBytes("한글", 15, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "한글ㅎㄹㄹ"
-     * MbStringUtils.rightPadByBytes("한글", 12, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "한글ㅎㄹ"
-     * MbStringUtils.rightPadByBytes("한글", 11, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "한글ㅎ  "
-     * MbStringUtils.rightPadByBytes("한글", 6, "ㅎㄹㄹ", StandardCharsets.UTF_8)  = "한글"
-     * MbStringUtils.rightPadByBytes("한글", -1, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "한글"
-     * MbStringUtils.rightPadByBytes("한글", 9, null, StandardCharsets.UTF_8)    = "한글   "
+     * MbStringUtil.rightPadByBytes("한글", 15, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "한글ㅎㄹㄹ"
+     * MbStringUtil.rightPadByBytes("한글", 12, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "한글ㅎㄹ"
+     * MbStringUtil.rightPadByBytes("한글", 11, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "한글ㅎ  "
+     * MbStringUtil.rightPadByBytes("한글", 6, "ㅎㄹㄹ", StandardCharsets.UTF_8)  = "한글"
+     * MbStringUtil.rightPadByBytes("한글", -1, "ㅎㄹㄹ", StandardCharsets.UTF_8) = "한글"
+     * MbStringUtil.rightPadByBytes("한글", 9, null, StandardCharsets.UTF_8)    = "한글   "
      * </pre>
      *
      * @param str     The string to pad. (패딩할 문자열)
