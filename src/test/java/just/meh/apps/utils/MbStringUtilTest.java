@@ -8,6 +8,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MbStringUtilTest {
 
@@ -369,6 +370,29 @@ class MbStringUtilTest {
             assertEquals("한글", MbStringUtil.rightPadByBytes("한글", 6, "ㅎㄹㄹ", StandardCharsets.UTF_8));
             assertEquals("한글", MbStringUtil.rightPadByBytes("한글", -1, "ㅎㄹㄹ", StandardCharsets.UTF_8));
             assertEquals("한글   ", MbStringUtil.rightPadByBytes("한글", 9, null, StandardCharsets.UTF_8));
+        }
+    }
+
+    @Nested
+    @DisplayName("Exception handling for invalid arguments")
+    class InvalidArguments {
+        @Test
+        @DisplayName("Throws IllegalArgumentException for null charset")
+        void testNullCharset() {
+            // lengthByBytes
+            assertThrows(IllegalArgumentException.class, () -> MbStringUtil.lengthByBytes("test", null));
+
+            // substrByBytes
+            assertThrows(IllegalArgumentException.class, () -> MbStringUtil.substrByBytes("test", 0, 1, null));
+
+            // substringByBytes
+            assertThrows(IllegalArgumentException.class, () -> MbStringUtil.substringByBytes("test", 0, 1, null));
+
+            // leftPadByBytes
+            assertThrows(IllegalArgumentException.class, () -> MbStringUtil.leftPadByBytes("test", 10, " ", null));
+
+            // rightPadByBytes
+            assertThrows(IllegalArgumentException.class, () -> MbStringUtil.rightPadByBytes("test", 10, " ", null));
         }
     }
 }

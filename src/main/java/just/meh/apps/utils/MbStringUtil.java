@@ -617,6 +617,10 @@ public final class MbStringUtil {
      * @return The length of the string in bytes, or 0 if the string is null or empty. (문자열의 바이트 단위 길이, 문자열이 null이거나 비어 있으면 0)
      */
     public static int lengthByBytes(String str, Charset charset) {
+        // charset이 null이면 예외를 발생시킵니다.
+        if (charset == null) {
+            throw new IllegalArgumentException("charset cannot be null");
+        }
         // 문자열이 null이거나 비어있으면 0을 반환합니다.
         if (str == null || str.isEmpty()) {
             return 0;
@@ -1075,6 +1079,10 @@ public final class MbStringUtil {
 
     // 문자열을 분석하여 메타데이터를 생성하는 private 헬퍼 메소드입니다.
     private static StringMetadata analyzeString(String str, Charset charset) {
+        // charset이 null이면 예외를 발생시킵니다.
+        if (charset == null) {
+            throw new IllegalArgumentException("charset cannot be null");
+        }
         StringMetadata metadata = new StringMetadata();
         CharsetEncoder encoder = charset.newEncoder();
 
