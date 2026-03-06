@@ -4,14 +4,22 @@
 
 `MbStringUtil` is a utility class for safely handling multi-byte encoded strings (such as UTF-8, EUC-KR, etc.) in Java.
 
-This library provides functionality to extract substrings based on character length and byte length. It is particularly useful for handling multi-byte characters, preventing them from being broken by replacing truncated parts with spaces.
+This library provides functionality to extract substrings and pad strings based on both character (code point) and byte lengths. It is particularly useful for handling multi-byte characters, preventing them from being broken by replacing truncated parts with spaces.
 
 ## Key Features
 
-- **`substr(String, int, int)`**: Extracts a substring based on the number of characters.
-- **`substrByBytes(String, int, int, Charset)`**: Extracts a substring based on byte length, preventing character corruption.
-- **`length(String)`**: Returns the number of characters (code points) in a string.
-- **`lengthByBytes(String, Charset)`**: Returns the byte length of a string for a given charset.
+- **Substring Extraction**:
+    - `substr(String, int, int)`: Extracts a substring based on the number of characters.
+    - `substrByBytes(String, int, int, Charset)`: Extracts a substring based on byte length, preventing character corruption.
+    - `substring(String, int, int)`: An intuitive, index-based version of `substr`.
+    - `substringByBytes(String, int, int, Charset)`: An intuitive, index-based version of `substrByBytes`.
+- **String Padding**:
+    - `leftPad(String, int, String)` and `rightPad(String, int, String)`: Pads a string to a specified character length.
+    - `leftPadByBytes(String, int, String, Charset)` and `rightPadByBytes(String, int, String, Charset)`: Pads a string to a specified byte length.
+- **Length Calculation**:
+    - `length(String)`: Returns the number of characters (code points) in a string.
+    - `lengthByBytes(String, Charset)`: Returns the byte length of a string for a given charset.
+- **Safe Handling of Multi-byte Characters**: Prevents characters from being broken and handles unencodable characters gracefully.
 - **Negative Offsets**: Supports negative indexing to calculate positions from the end of the string.
 - **Multi-encoding Support**: Can be used with any charset supported by Java, such as UTF-8 and EUC-KR.
 
@@ -60,6 +68,19 @@ MbStringUtil.substrByBytes("가나다abc", 0, 3, StandardCharsets.UTF_8) // retu
 MbStringUtil.substrByBytes("가나다abc", 2, 4, StandardCharsets.UTF_8) // returns " 나"
 MbStringUtil.substrByBytes("가나다abc", 2, 5, StandardCharsets.UTF_8) // returns " 나 "
 ```
+
+---
+
+### Other Methods
+
+- **`substring(String, int, int)`** and **`substringByBytes(String, int, int, Charset)`**
+  - These are variants of `substr` and `substrByBytes` that use start and end indices instead of a length.
+
+- **`leftPad(String, int, String)`** and **`rightPad(String, int, String)`**
+  - Pads a string to a specified character length.
+
+- **`leftPadByBytes(String, int, String, Charset)`** and **`rightPadByBytes(String, int, String, Charset)`**
+  - Pads a string to a specified byte length.
 
 ---
 

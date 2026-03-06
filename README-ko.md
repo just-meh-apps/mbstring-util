@@ -4,14 +4,22 @@
 
 `MbStringUtil`은 Java에서 UTF-8, EUC-KR 등과 같은 다중 바이트 인코딩 문자열을 안전하게 다루기 위한 유틸리티 클래스입니다.
 
-이 라이브러리는 문자 길이 및 바이트 길이를 기준으로 서브스트링을 추출하는 기능을 제공합니다. 특히 바이트 단위로 문자열을 다룰 때 다중 바이트 문자가 깨지는 것을 방지하기 위해, 잘리는 부분은 공백으로 안전하게 치환하는 기능을 포함합니다.
+이 라이브러리는 문자(코드 포인트) 및 바이트 길이를 기준으로 서브스트링을 추출하고 문자열을 패딩하는 기능을 제공합니다. 특히 바이트 단위로 문자열을 다룰 때 다중 바이트 문자가 깨지는 것을 방지하기 위해, 잘리는 부분은 공백으로 안전하게 치환하는 기능을 포함합니다.
 
 ## 주요 기능
 
-- **`substr(String, int, int)`**: 문자 수를 기준으로 서브스트링을 추출합니다.
-- **`substrByBytes(String, int, int, Charset)`**: 바이트 길이를 기준으로 서브스트링을 추출하며, 문자 깨짐을 방지합니다.
-- **`length(String)`**: 문자열의 문자(코드 포인트) 개수를 반환합니다.
-- **`lengthByBytes(String, Charset)`**: 주어진 문자셋에 대한 문자열의 바이트 길이를 반환합니다.
+- **서브스트링 추출**:
+    - `substr(String, int, int)`: 문자 수를 기준으로 서브스트링을 추출합니다.
+    - `substrByBytes(String, int, int, Charset)`: 바이트 길이를 기준으로 서브스트링을 추출하며, 문자 깨짐을 방지합니다.
+    - `substring(String, int, int)`: `substr`의 직관적인, 인덱스 기반 버전입니다.
+    - `substringByBytes(String, int, int, Charset)`: `substrByBytes`의 직관적인, 인덱스 기반 버전입니다.
+- **문자열 패딩**:
+    - `leftPad(String, int, String)` 및 `rightPad(String, int, String)`: 지정된 문자 길이에 맞게 문자열을 패딩합니다.
+    - `leftPadByBytes(String, int, String, Charset)` 및 `rightPadByBytes(String, int, String, Charset)`: 지정된 바이트 길이에 맞게 문자열을 패딩합니다.
+- **길이 계산**:
+    - `length(String)`: 문자열의 문자(코드 포인트) 개수를 반환합니다.
+    - `lengthByBytes(String, Charset)`: 주어진 문자셋에 대한 문자열의 바이트 길이를 반환합니다.
+- **안전한 다중 바이트 문자 처리**: 문자 깨짐을 방지하고 인코딩 불가능한 문자를 정상적으로 처리합니다.
 - **음수 오프셋**: 문자열의 끝에서부터 위치를 계산하는 음수 인덱싱을 지원합니다.
 - **다양한 인코딩 지원**: UTF-8, EUC-KR 등 Java에서 지원하는 모든 문자셋을 사용할 수 있습니다.
 
@@ -24,15 +32,15 @@
 문자 수를 기준으로 서브스트링을 추출합니다.
 
 ```java
-// str is null or empty
+// str이 null이거나 비어있을 경우
 MbStringUtil.substr(null, 0, 1)      // 반환값: ""
 MbStringUtil.substr("", 0, 1)        // 반환값: ""
 
-// start is positive
+// start가 양수일 경우
 MbStringUtil.substr("가나다abc", 0, 2) // 반환값: "가나"
 MbStringUtil.substr("가나다abc", 3, 2) // 반환값: "ab"
 
-// start is negative
+// start가 음수일 경우
 MbStringUtil.substr("가나다abc", -5, 2) // 반환값: "나다"
 MbStringUtil.substr("가나다abc", -2, 2) // 반환값: "bc"
 ```
@@ -60,6 +68,19 @@ MbStringUtil.substrByBytes("가나다abc", 0, 3, StandardCharsets.UTF_8) // 반�
 MbStringUtil.substrByBytes("가나다abc", 2, 4, StandardCharsets.UTF_8) // 반환값: " 나"
 MbStringUtil.substrByBytes("가나다abc", 2, 5, StandardCharsets.UTF_8) // 반환값: " 나 "
 ```
+
+---
+
+### 기타 메소드
+
+- **`substring(String, int, int)`** 및 **`substringByBytes(String, int, int, Charset)`**
+  - `substr` 및 `substrByBytes`의 변형으로, 길이 대신 시작 및 끝 인덱스를 사용합니다.
+
+- **`leftPad(String, int, String)`** 및 **`rightPad(String, int, String)`**
+  - 지정된 문자 길이에 맞게 문자열을 패딩합니다.
+
+- **`leftPadByBytes(String, int, String, Charset)`** 및 **`rightPadByBytes(String, int, String, Charset)`**
+  - 지정된 바이트 길이에 맞게 문자열을 패딩합니다.
 
 ---
 

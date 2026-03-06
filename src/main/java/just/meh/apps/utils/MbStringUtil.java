@@ -516,30 +516,36 @@ public final class MbStringUtil {
 
     private static String pad(String str, int totalLen, String padStr, boolean isLeft) {
         if (str == null) str = EMPTY_STRING;
-        int strLen = length(str); // code points
+        
+        // 코드 포인트 단위로 문자열 길이를 계산합니다.
+        int strLen = length(str);
+        
+        // 목표 길이가 현재 문자열 길이보다 작거나 같으면 원본 문자열을 그대로 반환합니다.
         if (totalLen <= strLen) {
             return str;
         }
 
+        // 패딩 문자열이 null이거나 비어 있으면 공백 문자를 기본값으로 사용합니다.
         String effectivePadStr = (padStr == null || padStr.isEmpty()) ? String.valueOf(PADDING_CHAR) : padStr;
         int padStrLen = length(effectivePadStr);
-        if (padStrLen == 0) { // Fallback for empty pad string after validation
-            effectivePadStr = String.valueOf(PADDING_CHAR);
-            padStrLen = 1;
-        }
 
+        // 채워야 할 총 길이를 계산합니다.
         int paddingNeeded = totalLen - strLen;
         StringBuilder padding = new StringBuilder();
 
+        // 패딩 문자열을 반복해서 추가합니다.
         int repeats = paddingNeeded / padStrLen;
         for (int i = 0; i < repeats; i++) {
             padding.append(effectivePadStr);
         }
+        
+        // 남은 길이만큼 패딩 문자열의 일부를 잘라 추가합니다.
         int remaining = paddingNeeded % padStrLen;
         if (remaining > 0) {
             padding.append(substr(effectivePadStr, 0, remaining));
         }
 
+        // isLeft 플래그에 따라 패딩을 왼쪽에 추가할지 오른쪽에 추가할지 결정합니다.
         if (isLeft) {
             return padding.toString() + str;
         } else {
@@ -549,30 +555,48 @@ public final class MbStringUtil {
 
     private static String padByBytes(String str, int totalLen, String padStr, Charset charset, boolean isLeft) {
         if (str == null) str = EMPTY_STRING;
+        
+        // 바이트 단위로 문자열 길이를 계산합니다.
         int strBytes = lengthByBytes(str, charset);
+        
+        // 목표 바이트 길이가 현재 문자열 바이트 길이보다 작거나 같으면 원본 문자열을 그대로 반환합니다.
         if (totalLen <= strBytes) {
             return str;
         }
 
+        // 패딩 문자열이 null이거나 비어 있으면 공백 문자를 기본값으로 사용합니다.
         String effectivePadStr = (padStr == null || padStr.isEmpty()) ? String.valueOf(PADDING_CHAR) : padStr;
         int padStrBytes = lengthByBytes(effectivePadStr, charset);
+        
+        // 패딩 문자열의 바이트 길이가 0인 경우(일반적인 상황은 아님) 0으로 나누는 오류를 방지합니다.
+        // 이 경우 공백을 기본 패딩 문자로 다시 시도합니다.
         if (padStrBytes == 0) {
             effectivePadStr = String.valueOf(PADDING_CHAR);
             padStrBytes = lengthByBytes(effectivePadStr, charset);
+            
+            // 공백조차 바이트 길이가 0이라면 패딩이 불가능하므로 원본 문자열을 반환합니다.
+            if (padStrBytes == 0) {
+                return str;
+            }
         }
 
+        // 채워야 할 총 바이트 수를 계산합니다.
         int bytesToPad = totalLen - strBytes;
         StringBuilder padding = new StringBuilder();
 
+        // 패딩 문자열을 반복해서 추가합니다.
         int repeats = bytesToPad / padStrBytes;
         for (int i = 0; i < repeats; i++) {
             padding.append(effectivePadStr);
         }
+        
+        // 남은 바이트만큼 패딩 문자열의 일부를 잘라 추가합니다.
         int remainingBytes = bytesToPad % padStrBytes;
         if (remainingBytes > 0) {
             padding.append(substrByBytes(effectivePadStr, 0, remainingBytes, charset));
         }
 
+        // isLeft 플래그에 따라 패딩을 왼쪽에 추가할지 오른쪽에 추가할지 결정합니다.
         if (isLeft) {
             return padding.toString() + str;
         } else {
