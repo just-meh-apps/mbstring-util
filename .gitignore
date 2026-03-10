@@ -2,7 +2,7 @@
 target/
 
 # Ignore .idx directory...
-.idx/
+.idx/*
 # ...but do NOT ignore .idx/dev.nix
 !.idx/dev.nix
 
