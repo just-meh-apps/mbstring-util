@@ -117,3 +117,9 @@ MbStringUtil.lengthByBytes("👍a가", StandardCharsets.UTF_8) // 반환값: 8
 ```shell
 mvn clean install
 ```
+
+---
+
+## 라이선스 및 AI 정보
+- AI-Generated: 이 프로젝트는 AI와의 협업을 통해 초안 작성 및 최적화 과정을 거쳤습니다.
+- License: MIT License 하에 자유롭게 수정 및 배포가 가능합니다.
