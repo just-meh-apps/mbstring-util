@@ -117,3 +117,9 @@ To build the project and run tests, use the following Maven command:
 ```shell
 mvn clean install
 ```
+
+---
+
+## License & AI Information
+- **AI-Generated:** This project was drafted and optimized in collaboration with AI.
+- **License:** Distributed under the MIT License; feel free to modify and redistribute.
